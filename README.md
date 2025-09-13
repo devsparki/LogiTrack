@@ -312,9 +312,7 @@ CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
 ## 📞 **Suporte**
 
 Para suporte técnico ou dúvidas:
-- 📧 Email: suporte@logitrack.com
-- 📖 Documentação: [docs.logitrack.com]
-- 🐛 Issues: [GitHub Issues]
+- 📧 Email: gabrielmoraesbastos2112@gmail.com
 
 ## 📄 **Licença**
 
