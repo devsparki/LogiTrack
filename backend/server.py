@@ -137,28 +137,41 @@ async def simulate_vehicle_movement():
                 
                 vehicle.lat += lat_change
                 vehicle.lng += lng_change
-                vehicle.speed = max(0, vehicle.speed + random.uniform(-5, 5))
-                vehicle.fuel_level = max(0, vehicle.fuel_level - random.uniform(0, 0.5))
+                
+                # More dynamic speed changes with higher speeds
+                speed_change = random.uniform(-10, 15)
+                vehicle.speed = max(0, min(120, vehicle.speed + speed_change))  # Max 120 km/h
+                
+                vehicle.fuel_level = max(0, vehicle.fuel_level - random.uniform(0.1, 0.8))
                 vehicle.odometer += vehicle.speed * (30 / 3600)  # 30 seconds of movement
                 vehicle.engine_hours += 30 / 3600  # 30 seconds in hours
                 vehicle.last_updated = datetime.now(timezone.utc)
                 
-                # Generate alerts
+                # Generate alerts with more conditions
                 if vehicle.speed > 80:
                     alert = Alert(
                         vehicle_id=vehicle_id,
                         type="speed",
                         message=f"{vehicle.name} excedendo velocidade: {vehicle.speed:.1f} km/h",
-                        severity="high"
+                        severity="high" if vehicle.speed < 100 else "critical"
                     )
                     alerts_to_send.append(alert)
                 
-                if vehicle.fuel_level < 20:
+                if vehicle.fuel_level < 20:  
                     alert = Alert(
                         vehicle_id=vehicle_id,
                         type="fuel",
                         message=f"{vehicle.name} com combustível baixo: {vehicle.fuel_level:.1f}%",
                         severity="medium" if vehicle.fuel_level > 10 else "critical"
+                    )
+                    alerts_to_send.append(alert)
+                    
+                if vehicle.fuel_level < 5:  # Emergency fuel alert
+                    alert = Alert(
+                        vehicle_id=vehicle_id,
+                        type="fuel",
+                        message=f"EMERGÊNCIA: {vehicle.name} quase sem combustível: {vehicle.fuel_level:.1f}%",
+                        severity="critical"
                     )
                     alerts_to_send.append(alert)
                 
@@ -171,7 +184,9 @@ async def simulate_vehicle_movement():
         
         # Store alerts in database
         if alerts_to_send:
-            await db.alerts.insert_many([alert.dict() for alert in alerts_to_send])
+            alert_dicts = [alert.dict() for alert in alerts_to_send]
+            await db.alerts.insert_many(alert_dicts)
+            print(f"🚨 Generated {len(alerts_to_send)} new alerts")
         
         # Emit real-time updates via WebSocket
         fleet_data = {
@@ -180,6 +195,7 @@ async def simulate_vehicle_movement():
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
+        print(f"📡 Emitting fleet update to {len(active_vehicles)} vehicles at {datetime.now()}")
         await sio.emit("fleet_update", fleet_data)
         
         await asyncio.sleep(30)  # Update every 30 seconds
