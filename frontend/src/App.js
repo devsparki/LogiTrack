@@ -37,15 +37,18 @@ const createVehicleIcon = (status, vehicleType) => {
     maintenance: '#ef4444'
   };
   
-  return L.divIcon({
-    html: `<div style="background-color: ${colors[status]}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center;">
-      <svg width="12" height="12" fill="white" viewBox="0 0 24 24">
-        <path d="M20 8h-3l-1.5-1.5h-7L7 8H4c-1.1 0-2 .9-2 2v7c0 1.1.9 2 2 2h1c0 1.66 1.34 3 3 3s3-1.34 3-3h4c0 1.66 1.34 3 3 3s3-1.34 3-3h1c1.1 0 2-.9 2-2v-7c0-1.1-.9-2-2-2z"/>
+  return new L.Icon({
+    iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+      <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="15" cy="15" r="12" fill="${colors[status]}" stroke="white" stroke-width="2"/>
+        <svg x="9" y="9" width="12" height="12" fill="white" viewBox="0 0 24 24">
+          <path d="M20 8h-3l-1.5-1.5h-7L7 8H4c-1.1 0-2 .9-2 2v7c0 1.1.9 2 2 2h1c0 1.66 1.34 3 3 3s3-1.34 3-3h4c0 1.66 1.34 3 3 3s3-1.34 3-3h1c1.1 0 2-.9 2-2v-7c0-1.1-.9-2-2-2z"/>
+        </svg>
       </svg>
-    </div>`,
-    className: 'custom-div-icon',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10]
+    `),
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -15]
   });
 };
 
