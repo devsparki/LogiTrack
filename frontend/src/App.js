@@ -62,20 +62,56 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize socket connection
-    const newSocket = io(BACKEND_URL);
+    // Load initial data first
+    loadInitialData();
+
+    // Initialize socket connection with polling fallback
+    const newSocket = io(BACKEND_URL, {
+      transports: ['polling', 'websocket'],
+      upgrade: true,
+      forceNew: true
+    });
+    
     setSocket(newSocket);
+
+    newSocket.on('connect', () => {
+      console.log('✅ Socket connected successfully');
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('❌ Socket disconnected');
+    });
 
     // Listen for real-time fleet updates
     newSocket.on('fleet_update', (data) => {
+      console.log('🔄 Received fleet update:', data);
       setVehicles(data.vehicles);
       if (data.alerts && data.alerts.length > 0) {
         setAlerts(prev => [...data.alerts, ...prev].slice(0, 50));
       }
+      // Update fleet stats from the received data
+      if (data.vehicles) {
+        const totalVehicles = data.vehicles.length;
+        const activeVehicles = data.vehicles.filter(v => v.status === 'active').length;
+        const idleVehicles = data.vehicles.filter(v => v.status === 'idle').length;
+        const maintenanceVehicles = data.vehicles.filter(v => v.status === 'maintenance').length;
+        const avgFuel = data.vehicles.reduce((sum, v) => sum + v.fuel_level, 0) / totalVehicles;
+        
+        setFleetStats({
+          total_vehicles: totalVehicles,
+          active_vehicles: activeVehicles,
+          idle_vehicles: idleVehicles,
+          maintenance_vehicles: maintenanceVehicles,
+          avg_fuel_level: avgFuel,
+          total_distance_today: data.vehicles.reduce((sum, v) => sum + v.odometer, 0),
+          alerts_count: alerts.filter(a => !a.resolved).length
+        });
+      }
     });
 
-    // Load initial data
-    loadInitialData();
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
 
     return () => {
       newSocket.close();
